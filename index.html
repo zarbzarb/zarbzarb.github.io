@@ -89,7 +89,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
  */
 /*! https://mths.be/cssesc v3.0.0 by @mathias */
 
-</script>
+    </script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
@@ -275,6 +275,58 @@ Check your Browserslist config to be sure that your targets are set up correctly
                 font-size: 0.85rem;
             }
         }
+
+        /* ===== 配对模式 ===== */
+        .match-tile {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 70px;
+            padding: 8px 6px;
+            border-radius: 14px;
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: #334155;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease,
+                        background .15s ease, color .15s ease, opacity .25s ease;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, .06);
+        }
+        .match-tile:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(15, 23, 42, .10);
+            border-color: #cbd5e1;
+        }
+        .match-tile.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            color: #1d4ed8;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+        }
+        .match-tile.wrong {
+            border-color: #ef4444;
+            background: #fee2e2;
+            color: #dc2626;
+            animation: tileShake .32s ease;
+        }
+        .match-tile.matched {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(.85);
+            border-color: #86efac;
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+        .match-tile:active { transform: scale(.97); }
+        @keyframes tileShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -286,14 +338,18 @@ Check your Browserslist config to be sure that your targets are set up correctly
         </div>
         
         <!-- 模式切换 -->
-        <div class="flex justify-center gap-3 mb-8 fade-in">
-            <button id="memoryBtn" onclick="switchMode('memory')" class="px-8 py-3 rounded-full font-medium transition-all duration-300 btn-active">
+        <div class="flex flex-wrap justify-center gap-3 mb-8 fade-in">
+            <button id="memoryBtn" onclick="switchMode('memory')" class="px-5 sm:px-8 py-3 rounded-full font-medium transition-all duration-300 btn-active">
                 <svg class="icon w-5 h-5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                 记忆模式
             </button>
-            <button id="examBtn" onclick="switchMode('exam')" class="px-8 py-3 rounded-full font-medium transition-all duration-300 btn-inactive">
+            <button id="examBtn" onclick="switchMode('exam')" class="px-5 sm:px-8 py-3 rounded-full font-medium transition-all duration-300 btn-inactive">
                 <svg class="icon w-5 h-5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                 考试模式
+            </button>
+            <button id="matchBtn" onclick="switchMode('match')" class="px-5 sm:px-8 py-3 rounded-full font-medium transition-all duration-300 btn-inactive">
+                <svg class="icon w-5 h-5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                配对模式
             </button>
         </div>
         
@@ -732,6 +788,48 @@ Check your Browserslist config to be sure that your targets are set up correctly
             </div>
         </div>
         
+        <!-- ========== 配对模式 ========== -->
+        <div id="matchMode" class="hidden fade-in">
+
+            <div class="card rounded-2xl p-4 sm:p-6 mb-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-slate-500">配对数量</label>
+                        <select id="pairCount" onchange="startMatch()" class="input-field px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-700">
+                            <option value="6">6 对（12 块）</option>
+                            <option value="8" selected>8 对（16 块）</option>
+                            <option value="10">10 对（20 块）</option>
+                            <option value="12">12 对（24 块）</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-4 text-sm">
+                        <span class="text-slate-500">已配对 <span id="matchDone" class="font-semibold text-blue-600">0</span>/<span id="matchTotal">8</span></span>
+                        <span class="text-slate-500">用时 <span id="matchTime" class="font-semibold text-slate-700">0s</span></span>
+                        <span class="text-slate-500">错误 <span id="matchErrors" class="font-semibold text-red-500">0</span></span>
+                    </div>
+                    <button onclick="startMatch()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-medium transition-colors">
+                        重新开始
+                    </button>
+                </div>
+            </div>
+
+            <div class="card rounded-2xl p-4 sm:p-6">
+                <p class="text-sm text-slate-500 mb-4 text-center">先点一个百分数，再点它对应的分数；配对正确即消除，点错会闪红</p>
+                <div id="matchGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-3"></div>
+            </div>
+
+            <div id="matchResult" class="card rounded-2xl p-8 text-center mt-6 hidden">
+                <div class="text-5xl mb-3">🎉</div>
+                <h2 class="text-2xl font-bold text-slate-800 mb-3">全部配对完成！</h2>
+                <p class="text-slate-500 mb-1">用时 <span id="matchFinalTime" class="text-2xl font-bold text-blue-500">0s</span></p>
+                <p class="text-slate-500 mb-6">错误次数 <span id="matchFinalErrors" class="font-semibold text-red-500">0</span></p>
+                <div id="matchComment" class="text-lg font-medium text-slate-600 mb-6"></div>
+                <button onclick="startMatch()" class="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors">
+                    再来一局
+                </button>
+            </div>
+        </div>
+
         <!-- 页脚 -->
         <div class="text-center mt-10 text-slate-400 text-sm">
             五步记忆法 + CP对照表 + 刷题练习 = 百化分自由 ✨
@@ -815,24 +913,24 @@ Check your Browserslist config to be sure that your targets are set up correctly
             document.getElementById('view' + view.charAt(0).toUpperCase() + view.slice(1) + 'Btn').className = 'px-3 sm:px-6 py-2 rounded-md text-xs sm:text-sm font-medium tab-active';
         }
 
-        // 切换模式
+        // 切换模式（记忆 / 考试 / 配对）
         function switchMode(mode) {
             stopTimer();
-            const memoryBtn = document.getElementById('memoryBtn');
-            const examBtn = document.getElementById('examBtn');
-            const memoryMode = document.getElementById('memoryMode');
-            const examMode = document.getElementById('examMode');
-            
-            if (mode === 'memory') {
-                memoryBtn.className = 'px-8 py-3 rounded-full font-medium transition-all duration-300 btn-active';
-                examBtn.className = 'px-8 py-3 rounded-full font-medium transition-all duration-300 btn-inactive';
-                memoryMode.classList.remove('hidden');
-                examMode.classList.add('hidden');
-            } else {
-                examBtn.className = 'px-8 py-3 rounded-full font-medium transition-all duration-300 btn-active';
-                memoryBtn.className = 'px-8 py-3 rounded-full font-medium transition-all duration-300 btn-inactive';
-                examMode.classList.remove('hidden');
-                memoryMode.classList.add('hidden');
+            ['memory', 'exam', 'match'].forEach(m => {
+                const btn = document.getElementById(m + 'Btn');
+                const panel = document.getElementById(m + 'Mode');
+                if (!btn || !panel) return;
+                const active = (m === mode);
+                btn.className = 'px-5 sm:px-8 py-3 rounded-full font-medium transition-all duration-300 ' + (active ? 'btn-active' : 'btn-inactive');
+                panel.classList.toggle('hidden', !active);
+            });
+
+            if (mode === 'match') {
+                const grid = document.getElementById('matchGrid');
+                if (grid && grid.children.length === 0) startMatch();
+            } else if (matchTimer) {
+                clearInterval(matchTimer);
+                matchTimer = null;
             }
         }
 
@@ -1142,6 +1240,126 @@ Check your Browserslist config to be sure that your targets are set up correctly
 
         // 初始化
         initFullTable();
+
+        // ================= 配对模式 =================
+        let matchSelected = null;
+        let matchLocked = false;
+        let matchTimer = null;
+        let matchStartAt = 0;
+        let matchErrors = 0;
+        let matchPairsTotal = 0;
+        let matchDoneCount = 0;
+
+        function startMatch() {
+            const grid = document.getElementById('matchGrid');
+            if (!grid) return;
+
+            const pairCount = parseInt(document.getElementById('pairCount').value, 10) || 8;
+
+            // 从完整对照表随机取若干组，每组拆成一个百分数块 + 一个分数块
+            const picked = fullData.slice().sort(() => Math.random() - 0.5).slice(0, pairCount);
+            const tiles = [];
+            picked.forEach((d, i) => {
+                tiles.push({ pairId: i, kind: 'percent', text: d.percent });
+                tiles.push({ pairId: i, kind: 'frac', text: d.frac });
+            });
+            tiles.sort(() => Math.random() - 0.5);
+
+            grid.innerHTML = tiles.map(t =>
+                '<div class="match-tile" data-pair="' + t.pairId + '" data-kind="' + t.kind +
+                '" onclick="onTileClick(this)">' + t.text + '</div>'
+            ).join('');
+
+            matchSelected = null;
+            matchLocked = false;
+            matchErrors = 0;
+            matchDoneCount = 0;
+            matchPairsTotal = pairCount;
+
+            document.getElementById('matchDone').textContent = '0';
+            document.getElementById('matchTotal').textContent = pairCount;
+            document.getElementById('matchErrors').textContent = '0';
+            document.getElementById('matchTime').textContent = '0s';
+            document.getElementById('matchResult').classList.add('hidden');
+
+            if (matchTimer) clearInterval(matchTimer);
+            matchStartAt = Date.now();
+            matchTimer = setInterval(() => {
+                document.getElementById('matchTime').textContent =
+                    Math.floor((Date.now() - matchStartAt) / 1000) + 's';
+            }, 1000);
+        }
+
+        function onTileClick(el) {
+            if (matchLocked || el.classList.contains('matched')) return;
+
+            // 再点自己 -> 取消选中
+            if (matchSelected && matchSelected.el === el) {
+                el.classList.remove('selected');
+                matchSelected = null;
+                return;
+            }
+
+            // 第一次选中
+            if (!matchSelected) {
+                el.classList.add('selected');
+                matchSelected = { el: el, kind: el.dataset.kind, pair: el.dataset.pair };
+                return;
+            }
+
+            // 选了同类型 -> 改选
+            if (matchSelected.kind === el.dataset.kind) {
+                matchSelected.el.classList.remove('selected');
+                el.classList.add('selected');
+                matchSelected = { el: el, kind: el.dataset.kind, pair: el.dataset.pair };
+                return;
+            }
+
+            const first = matchSelected.el;
+
+            if (first.dataset.pair === el.dataset.pair) {
+                // 配对成功
+                first.classList.remove('selected');
+                first.classList.add('matched');
+                el.classList.add('matched');
+                matchSelected = null;
+                matchDoneCount++;
+                document.getElementById('matchDone').textContent = matchDoneCount;
+                if (matchDoneCount === matchPairsTotal) finishMatch();
+            } else {
+                // 配对失败
+                matchLocked = true;
+                first.classList.add('wrong');
+                el.classList.add('wrong');
+                matchErrors++;
+                document.getElementById('matchErrors').textContent = matchErrors;
+                setTimeout(() => {
+                    first.classList.remove('wrong', 'selected');
+                    el.classList.remove('wrong');
+                    matchSelected = null;
+                    matchLocked = false;
+                }, 420);
+            }
+        }
+
+        function finishMatch() {
+            if (matchTimer) {
+                clearInterval(matchTimer);
+                matchTimer = null;
+            }
+            const secs = Math.floor((Date.now() - matchStartAt) / 1000);
+            document.getElementById('matchFinalTime').textContent = secs + 's';
+            document.getElementById('matchFinalErrors').textContent = matchErrors;
+
+            let comment = '';
+            if (matchErrors === 0) comment = '零失误！盲配对已经练出来了 🏆';
+            else if (matchErrors <= 3) comment = '很稳，再刷两局就能条件反射了 💪';
+            else comment = '错得多说明还不够熟，回记忆模式过一遍对照表 📚';
+            document.getElementById('matchComment').textContent = comment;
+
+            document.getElementById('matchResult').classList.remove('hidden');
+        }
+
     </script>
 </body>
 </html>
